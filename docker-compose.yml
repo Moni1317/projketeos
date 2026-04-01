@@ -1,0 +1,9 @@
+services:
+  movie-app:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11434/api/generate
+    extra_hosts:
+      - "host.docker.internal:host-gateway" 
