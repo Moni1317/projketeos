@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 # Konfigurace Gemini API
 # Klíč bys měl mít v proměnných prostředí (Environment Variables)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "TVUJ_API_KLIC")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "sk-Zc8cvMh3CxMnucsnJFUemg")
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Výběr modelu
