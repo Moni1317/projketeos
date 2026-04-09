@@ -1,8 +1,9 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 WORKDIR /app
+# Instalace závislostí
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+# Kopírování zbytku aplikace
 COPY . .
-# Exponujeme port 80
-EXPOSE 80
+# Spuštění aplikac
 CMD ["python", "app.py"]
