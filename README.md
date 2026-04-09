@@ -45,9 +45,5 @@ Tato webová aplikace postavená na frameworku **Flask** slouží k rychlému do
 | **GET** | `/status` | Diagnostika aplikace (JSON formát). |
 | **POST** | `/ai` | Zpracování požadavku na film (bere JSON `{"genre": "..."}`). |
 
----
-
-## 👩‍💻 Autorka
-* **Monika Němečková**
 
 > **Poznámka pro vývojáře:** Z důvodu konfigurace školního serveru je v kódu nastaveno `verify=False` u požadavků na API a vypnuto varování `InsecureRequestWarning`.
