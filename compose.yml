@@ -1,20 +1,20 @@
-services:
-  app:
-    build: .
-    ports:
-      - "8081:5000"
-    environment:
-      - PORT=5000
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
-      - DATABASE_URL=postgresql://student:heslo123@db:5432/myapp
-    depends_on:
-      - db
+services: # Definice služeb (kontejnerů), které mají běžet společně
+  app: # Název první služby – naše webová aplikace v Pythonu
+    build: . # Říká Dockeru, aby postavil obraz aplikace podle Dockerfilu v aktuální složce
+    ports: # Propojení portů mezi kontejnerem a tvým počítačem
+      - "8081:5000" # Port 8081 venku (prohlížeč) směřuje na port 5000 uvnitř kontejneru
+    environment: # Nastavení proměnných prostředí pro aplikaci
+      - PORT=5000 # Říká aplikaci, na jakém vnitřním portu má běžet
+      - OPENAI_API_KEY=${OPENAI_API_KEY} # Načte API klíč z tvého souboru .env v počítači
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL} # Načte adresu AI serveru ze souboru .env
+      - DATABASE_URL=postgresql://student:heslo123@db:5432/myapp # Adresa pro připojení k DB službě
+    depends_on: # Definice závislostí mezi službami
+      - db # Aplikace počká, než se začne spouštět kontejner s databází
 
-  db:
-    image: postgres:16-alpine
-    environment:
-      - POSTGRES_USER=student
-      - POSTGRES_PASSWORD=heslo123
-      - POSTGRES_DB=myapp
-      - PGDATA=/data/pgdata  # Důležité pro perzistenci!
+  db: # Název druhé služby – databáze PostgreSQL
+    image: postgres:16-alpine # Použije hotový, malý a rychlý obraz PostgreSQL verze 16
+    environment: # Konfigurace přístupu k databázi
+      - POSTGRES_USER=student # Nastavení jména hlavního uživatele
+      - POSTGRES_PASSWORD=heslo123 # Nastavení přístupového hesla
+      - POSTGRES_DB=myapp # Vytvoření databáze s tímto názvem po startu
+      - PGDATA=/data/pgdata  # Nastavení cesty k datům uvnitř kontejneru (pro jejich trvalost)
