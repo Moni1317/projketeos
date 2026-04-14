@@ -1,9 +1,20 @@
 services:
-  web:
+  app:
     build: .
     ports:
-      - "8081:5000"  # Přístup zvenku přes 8081, uvnitř kontejneru jde na 5000
+      - "8081:5000"
     environment:
       - PORT=5000
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - DATABASE_URL=postgresql://student:heslo123@db:5432/myapp
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=student
+      - POSTGRES_PASSWORD=heslo123
+      - POSTGRES_DB=myapp
+      - PGDATA=/data/pgdata  # Důležité pro perzistenci!
