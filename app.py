@@ -55,6 +55,16 @@ def status():
         "projekt": "Movie AI Suggestion with DB"
     })
 
+@app.route('/history', methods=['GET'])
+def get_history():
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT zanr, odpoved FROM history ORDER BY cas DESC LIMIT 10"))
+            history_data = [{"zanr": row[0], "odpoved": row[1]} for row in result]
+            return jsonify(history_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/ai', methods=['POST'])
 def ai():
     data = request.json
@@ -77,7 +87,6 @@ def ai():
         if response.status_code == 200:
             ai_response = response.json()['choices'][0]['message']['content'].strip()
             
-            # --- ULOŽENÍ DO DATABÁZE ---
             with engine.connect() as conn:
                 conn.execute(
                     text("INSERT INTO history (cas, zanr, odpoved) VALUES (:cas, :zanr, :odpoved)"),
