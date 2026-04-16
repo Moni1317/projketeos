@@ -1,32 +1,29 @@
-import os # Knihovna pro přístup k operačnímu systému (proměnné prostředí)
-import requests # Knihovna pro odesílání HTTP požadavků na AI API
-import datetime # Knihovna pro práci s datem a časem
-import urllib3 # Knihovna pro síťovou komunikaci
-import time # Knihovna pro práci s časem (pauzy)
-from flask import Flask, request, jsonify, render_template # Framework pro tvorbu webového serveru
-from dotenv import load_dotenv # Načítání tajných údajů ze souboru .env
-from sqlalchemy import create_engine, text # Nástroje pro práci s SQL databází
+import os
+import requests
+import datetime
+import urllib3
+import time
+from flask import Flask, request, jsonify, render_template
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) # Vypnutí varování ohledně SSL certifikátů
-load_dotenv() # Načtení konfiguračních proměnných z .env
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+load_dotenv()
 
-app = Flask(__name__) # Vytvoření instance Flask aplikace
+app = Flask(__name__)
 
-# --- DATABÁZE ---
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://student:heslo123@db:5432/myapp") # Získání adresy k databázi
-engine = create_engine(DATABASE_URL) # Připojení k databázovému stroji
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://student:heslo123@db:5432/myapp")
+engine = create_engine(DATABASE_URL)
 
-# Retry loop: počkáme, až se DB nastartuje (zkusí se připojit 10x)
 for i in range(10):
     try:
-        with engine.connect() as conn: # Pokus o spojení
-            conn.execute(text("SELECT 1")) # Jednoduchý test funkčnosti databáze
-            break # Pokud funguje, vyskočí z cyklu
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            break
     except Exception:
-        print("Čekám na databázi...") # Pokud nefunguje, vypíše zprávu
-        time.sleep(2) # Počká 2 sekundy před dalším pokusem
+        print("Čekám na databázi...")
+        time.sleep(2)
 
-# Vytvoření tabulky pro dotazy a odpovědi, pokud ještě neexistuje
 with engine.connect() as conn:
     conn.execute(text("""
         CREATE TABLE IF NOT EXISTS history (
@@ -36,17 +33,16 @@ with engine.connect() as conn:
             odpoved TEXT
         )
     """))
-    conn.commit() # Potvrzení změn v databázi
+    conn.commit()
 
-# --- KONFIGURACE AI ---
-api_key = os.environ.get("OPENAI_API_KEY") # Načtení klíče k AI
-base_url = os.environ.get("OPENAI_BASE_URL", "https://kurim.ithope.eu/v1") # Adresa AI serveru
+api_key = os.environ.get("OPENAI_API_KEY")
+base_url = os.environ.get("OPENAI_BASE_URL", "https://kurim.ithope.eu/v1")
 
-@app.route('/') # Definice hlavní stránky
+@app.route('/')
 def index():
-    return render_template('index.html') # Zobrazení tvého HTML souboru
+    return render_template('index.html')
 
-@app.route('/status', methods=['GET']) # Endpoint pro kontrolu, zda server běží
+@app.route('/status', methods=['GET'])
 def status():
     return jsonify({
         "status": "running",
@@ -55,52 +51,52 @@ def status():
         "projekt": "Movie AI Suggestion with DB"
     })
 
-@app.route('/history', methods=['GET']) # Endpoint pro získání historie z DB
+@app.route('/history', methods=['GET'])
 def get_history():
     try:
         with engine.connect() as conn:
-            result = conn.execute(text("SELECT zanr, odpoved FROM history ORDER BY cas DESC LIMIT 10")) # Vybere posledních 10 záznamů
-            history_data = [{"zanr": row[0], "odpoved": row[1]} for row in result] # Převede výsledky na seznam
-            return jsonify(history_data) # Pošle historii jako JSON do prohlížeče
+            result = conn.execute(text("SELECT zanr, odpoved FROM history ORDER BY cas DESC LIMIT 10"))
+            history_data = [{"zanr": row[0], "odpoved": row[1]} for row in result]
+            return jsonify(history_data)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 # Vrátí chybu, pokud se čtení nepovedlo
+        return jsonify({"error": str(e)}), 500
 
-@app.route('/ai', methods=['POST']) # Hlavní endpoint pro dotaz na AI
+@app.route('/ai', methods=['POST'])
 def ai():
-    data = request.json # Přijme data z prohlížeče (ten žánr)
-    genre = data.get("genre", "akční") # Získá žánr, nebo použije "akční" jako základ
+    data = request.json
+    genre = data.get("genre", "akční")
     
-    prompt = f"Doporuč jeden nejlepší film pro žánr {genre}. Odpověz pouze jednou krátkou větou v češtině." # Zadání pro AI
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"} # Nastavení autorizace
-    payload = { # Balíček dat, který se posílá AI
+    prompt = f"Doporuč jeden nejlepší film pro žánr {genre}. Odpověz pouze jednou krátkou větou v češtině."
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    payload = {
         "model": "gemma3:27b", 
         "messages": [{"role": "user", "content": prompt}],
         "stream": False
     }
 
     try:
-        clean_url = base_url.rstrip('/') # Odstranění lomítka na konci adresy
-        target_url = f"{clean_url}/chat/completions" # Sestavení cílové adresy pro dotaz
+        clean_url = base_url.rstrip('/')
+        target_url = f"{clean_url}/chat/completions"
         
-        response = requests.post(target_url, headers=headers, json=payload, timeout=20, verify=False) # Odeslání dotazu AI
+        response = requests.post(target_url, headers=headers, json=payload, timeout=20, verify=False)
         
-        if response.status_code == 200: # Pokud AI odpověděla správně
-            ai_response = response.json()['choices'][0]['message']['content'].strip() # Vytažení textu odpovědi
+        if response.status_code == 200:
+            ai_response = response.json()['choices'][0]['message']['content'].strip()
             
-            with engine.connect() as conn: # Uložení dotazu do databáze
+            with engine.connect() as conn:
                 conn.execute(
                     text("INSERT INTO history (cas, zanr, odpoved) VALUES (:cas, :zanr, :odpoved)"),
                     {"cas": datetime.datetime.now(), "zanr": genre, "odpoved": ai_response}
                 )
-                conn.commit() # Potvrzení uložení
+                conn.commit()
             
-            return jsonify({"doporuceni": ai_response}) # Poslání výsledku zpět do prohlížeče
+            return jsonify({"doporuceni": ai_response})
         else:
-            return jsonify({"error": f"Server vrátil {response.status_code}."}), response.status_code # Chyba na straně AI
+            return jsonify({"error": f"Server vrátil {response.status_code}."}), response.status_code
 
     except Exception as e:
-        return jsonify({"error": f"Spojení selhalo: {str(e)}"}), 500 # Chyba v komunikaci nebo v kódu
+        return jsonify({"error": f"Spojení selhalo: {str(e)}"}), 500
 
-if __name__ == "__main__": # Spuštění serveru
-    port = int(os.environ.get("PORT", 5000)) # Nastavení portu (standardně 5000)
-    app.run(host='0.0.0.0', port=port) # Spuštění aplikace na všech dostupných adresách
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
