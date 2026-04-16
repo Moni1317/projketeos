@@ -1,107 +1,103 @@
-<!DOCTYPE html> <!-- Definuje typ dokumentu jako HTML5 -->
-<html lang="cs"> <!-- Začátek HTML dokumentu v češtině -->
-<head> <!-- Sekce pro nastavení a metadata stránky -->
-    <meta charset="UTF-8"> <!-- Nastavení kódování pro správné zobrazení češtiny -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Zajišťuje responzivitu pro mobily -->
-    <title>AI Filmový Rádce</title> <!-- Titulek stránky v záložce prohlížeče -->
-    <link rel="stylesheet" href="https://jsdelivr.net"> <!-- Připojení CSS stylu Pico pro hezký vzhled -->
-    <style> <!-- Vlastní úpravy vzhledu -->
-        body { padding: 2rem; } /* Odsazení obsahu od krajů */
-        #result { margin-top: 2rem; padding: 1rem; border-radius: 8px; display: none; } /* Styl boxu s výsledkem, zatím skrytý */
-        .loading { display: none; } /* Skrytí indikátoru načítání ve výchozím stavu */
-        .history-section { margin-top: 3rem; border-top: 1px solid #444; padding-top: 1rem; } /* Styl sekce historie s čarou */
-        .history-item { font-size: 0.9rem; margin-bottom: 0.5rem; border-bottom: 1px dashed #333; padding-bottom: 0.5rem; } /* Styl položky v historii */
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Filmový Rádce</title>
+    <link rel="stylesheet" href="https://jsdelivr.net">
+    <style>
+        body { padding: 2rem; }
+        #result { margin-top: 2rem; padding: 1rem; border-radius: 8px; display: none; }
+        .loading { display: none; }
+        .history-section { margin-top: 3rem; border-top: 1px solid #444; padding-top: 1rem; }
+        .history-item { font-size: 0.9rem; margin-bottom: 0.5rem; border-bottom: 1px dashed #333; padding-bottom: 0.5rem; }
     </style>
 </head>
-<body> <!-- Viditelný obsah stránky -->
-    <main class="container"> <!-- Hlavní obal obsahu s vystředěním -->
-        <header> <!-- Hlavička webu -->
-            <h1>🎬 AI Filmový Rádce</h1> <!-- Hlavní nadpis -->
-            <p>Zadej žánr a nechej si poradit od lokální AI (Gemma3:27b).</p> <!-- Instrukce pro uživatele -->
+<body>
+    <main class="container">
+        <header>
+            <h1>🎬 AI Filmový Rádce</h1>
+            <p>Zadej žánr a nechej si poradit od lokální AI (Gemma3:27b).</p>
         </header>
 
-        <section> <!-- Sekce s formulářem -->
-            <form id="movieForm"> <!-- Formulář pro odeslání žánru -->
-                <label for="genre">Žánr filmu</label> <!-- Popisek vstupního pole -->
-                <input type="text" id="genre" name="genre" placeholder="např. Sci-fi, Komedie, Horor..." required> <!-- Pole pro zadání žánru -->
-                <button type="submit" id="submitBtn">Najdi mi film</button> <!-- Tlačítko pro odeslání -->
+        <section>
+            <form id="movieForm">
+                <label for="genre">Žánr filmu</label>
+                <input type="text" id="genre" name="genre" placeholder="např. Sci-fi, Komedie, Horor..." required>
+                <button type="submit" id="submitBtn">Najdi mi film</button>
             </form>
         </section>
 
-        <progress class="loading" id="loader"></progress> <!-- Grafický indikátor průběhu (načítání) -->
+        <progress class="loading" id="loader"></progress>
 
-        <article id="result"> <!-- Box, kde se zobrazí výsledek od AI -->
-            <header><strong>Návrh pro tebe:</strong></header> <!-- Nadpis výsledku -->
-            <p id="recommendationText"></p> <!-- Místo, kam se vloží text doporučení -->
+        <article id="result">
+            <header><strong>Návrh pro tebe:</strong></header>
+            <p id="recommendationText"></p>
         </article>
 
-        <section class="history-section"> <!-- Sekce zobrazující historii dotazů -->
-            <h3>📜 Historie doporučení</h3> <!-- Nadpis historie -->
-            <div id="historyList"> <!-- Kontejner, do kterého se vypíše historie -->
-                <p>Zatím žádná historie...</p> <!-- Výchozí text historie -->
+        <section class="history-section">
+            <h3>📜 Historie doporučení</h3>
+            <div id="historyList">
+                <p>Zatím žádná historie...</p>
             </div>
         </section>
 
-        <footer style="margin-top: 3rem; font-size: 0.8rem;"> <!-- Patička stránky -->
-            <p>Endpointy: <a href="/status">/status</a> | <a href="/history">/history</a></p> <!-- Odkazy na serverové funkce -->
+        <footer style="margin-top: 3rem; font-size: 0.8rem;">
+            <p>Endpointy: <a href="/status">/status</a> | <a href="/history">/history</a></p>
         </footer>
     </main>
 
-    <script> <!-- Začátek programové logiky (JavaScript) -->
-        const form = document.getElementById('movieForm'); // Propojení formuláře do proměnné
-        const resultDiv = document.getElementById('result'); // Propojení boxu výsledku do proměnné
-        const resultText = document.getElementById('recommendationText'); // Propojení místa pro text do proměnné
-        const loader = document.getElementById('loader'); // Propojení indikátoru načítání do proměnné
-        const historyList = document.getElementById('historyList'); // Propojení seznamu historie do proměnné
+    <script>
+        const form = document.getElementById('movieForm');
+        const resultDiv = document.getElementById('result');
+        const resultText = document.getElementById('recommendationText');
+        const loader = document.getElementById('loader');
+        const historyList = document.getElementById('historyList');
 
-        // Funkce pro načtení historie ze serveru
         async function loadHistory() {
             try {
-                const response = await fetch('/history'); // Požadavek na server pro získání historie
-                const data = await response.json(); // Převod odpovědi na formát JSON
+                const response = await fetch('/history');
+                const data = await response.json();
                 
-                if (data.length > 0) { // Pokud historie není prázdná
-                    historyList.innerHTML = data.map(item => ` // Vygenerování HTML pro každou položku
+                if (data.length > 0) {
+                    historyList.innerHTML = data.map(item => `
                         <div class="history-item">
                             <strong>${item.zanr}:</strong> ${item.odpoved}
                         </div>
-                    `).join(''); // Spojení položek do jednoho řetězce a vložení do stránky
+                    `).join('');
                 }
             } catch (err) {
-                console.error('Chyba při načítání historie'); // Výpis chyby do konzole při selhání
+                console.error('Chyba při načítání historie');
             }
         }
 
-        // Načíst historii hned po otevření stránky
-        loadHistory(); // Spuštění funkce načítání historie
+        loadHistory();
 
-        // Funkce po odeslání formuláře
         form.onsubmit = async (e) => {
-            e.preventDefault(); // Zamezení obnovení stránky po odeslání
-            const genre = document.getElementById('genre').value; // Získání textu zadaného žánru
+            e.preventDefault();
+            const genre = document.getElementById('genre').value;
             
-            loader.style.display = 'block'; // Zobrazení indikátoru načítání
-            resultDiv.style.display = 'none'; // Skrytí předchozího výsledku
+            loader.style.display = 'block';
+            resultDiv.style.display = 'none';
 
             try {
-                const response = await fetch('/ai', { // Odeslání dat na serverový endpoint /ai
-                    method: 'POST', // Metoda odesílání POST
-                    headers: { 'Content-Type': 'application/json' }, // Definice formátu dat jako JSON
-                    body: JSON.stringify({ genre: genre }) // Převod žánru na JSON text
+                const response = await fetch('/ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ genre: genre })
                 });
-                const data = await response.json(); // Čekání na odpověď a převod na JSON
+                const data = await response.json();
                 
-                resultText.innerText = data.doporuceni || data.error; // Zobrazení doporučení nebo chybové zprávy
-                resultDiv.style.backgroundColor = data.error ? '#ff000010' : '#00ff0010'; // Barva pozadí podle úspěchu/chyby
-                resultDiv.style.display = 'block'; // Zobrazení boxu s výsledkem
+                resultText.innerText = data.doporuceni || data.error;
+                resultDiv.style.backgroundColor = data.error ? '#ff000010' : '#00ff0010';
+                resultDiv.style.display = 'block';
 
-                // Po úspěšném dotazu aktualizuj historii
-                if (!data.error) loadHistory(); // Pokud nenastala chyba, znovu načti historii
+                if (!data.error) loadHistory();
                 
             } catch (err) {
-                alert('Chyba při komunikaci se serverem.'); // Upozornění při selhání sítě
+                alert('Chyba při komunikaci se serverem.');
             } finally {
-                loader.style.display = 'none'; // Skrytí indikátoru načítání po dokončení dotazu
+                loader.style.display = 'none';
             }
         };
     </script>
