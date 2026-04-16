@@ -1,5 +1,5 @@
-flask                  # Hlavní knihovna pro tvorbu webového serveru a stránek
-requests               # Umožňuje serveru posílat dotazy na externí AI přes internet
-python-dotenv          # Načítá skrytá hesla a klíče ze souboru .env (bezpečnost)
-sqlalchemy==2.0.49     # Nástroj pro snadnou práci s databází pomocí Pythonu
-psycopg2-binary==2.9.9 # Ovladač (driver), díky kterému Python rozumí databázi PostgreSQL
+flask
+requests
+python-dotenv
+sqlalchemy==2.0.49
+psycopg2-binary==2.9.9
