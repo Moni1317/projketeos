@@ -36,7 +36,7 @@ with engine.connect() as conn:
     conn.commit()
 
 api_key = os.environ.get("OPENAI_API_KEY")
-base_url = os.environ.get("OPENAI_BASE_URL", "https://kurim.ithope.eu/v1")
+base_url = os.environ.get("OPENAI_BASE_URL", "https://ithope.eu")
 
 @app.route('/')
 def index():
